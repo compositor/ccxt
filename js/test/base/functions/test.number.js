@@ -1,8 +1,9 @@
-'use strict'
+'use strict';
 
 const { numberToString, decimalToPrecision, ROUND, TRUNCATE, DECIMAL_PLACES, PAD_WITH_ZERO, SIGNIFICANT_DIGITS } = require ('../../../../ccxt');
 const assert = require ('assert');
 
+it('decimalToPrecision works correctly', () => {
 // ----------------------------------------------------------------------------
 // numberToString works, not supported in Python and PHP yet
 
@@ -140,3 +141,4 @@ assert (decimalToPrecision ('1.45', ROUND, 0, DECIMAL_PLACES) === '1'); // not 2
 // throws (() =>
 //     decimalToPrecision ('foo'),
 //         "invalid number (contains an illegal character 'f')")
+});
