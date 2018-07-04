@@ -30,7 +30,7 @@ SOFTWARE.
 
 namespace ccxt;
 
-$version = '1.14.268';
+$version = '1.15.9';
 
 // rounding mode
 const TRUNCATE = 0;
@@ -108,10 +108,12 @@ class Exchange {
         'coolcoin',
         'crypton',
         'cryptopia',
+        'deribit',
         'dsx',
         'ethfinex',
         'exmo',
         'exx',
+        'fcoin',
         'flowbtc',
         'foxbit',
         'fybse',

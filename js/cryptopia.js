@@ -13,7 +13,7 @@ module.exports = class cryptopia extends Exchange {
             'id': 'cryptopia',
             'name': 'Cryptopia',
             'rateLimit': 1500,
-            'countries': 'NZ', // New Zealand
+            'countries': [ 'NZ' ], // New Zealand
             'has': {
                 'CORS': false,
                 'createMarketOrder': false,
@@ -99,6 +99,7 @@ module.exports = class cryptopia extends Exchange {
                 'BAT': 'BatCoin',
                 'BLZ': 'BlazeCoin',
                 'BTG': 'Bitgem',
+                'CAN': 'CanYa',
                 'CAT': 'Catcoin',
                 'CC': 'CCX',
                 'CMT': 'Comet',
@@ -106,10 +107,13 @@ module.exports = class cryptopia extends Exchange {
                 'FCN': 'Facilecoin',
                 'FUEL': 'FC2', // FuelCoin != FUEL
                 'HAV': 'Havecoin',
+                'KARM': 'KARMA',
                 'LBTC': 'LiteBitcoin',
                 'LDC': 'LADACoin',
                 'MARKS': 'Bitmark',
                 'NET': 'NetCoin',
+                'RED': 'RedCoin',
+                'STC': 'StopTrumpCoin',
                 'QBT': 'Cubits',
                 'WRC': 'WarCoin',
             },

@@ -13,7 +13,7 @@ class bitmex extends Exchange {
         return array_replace_recursive (parent::describe (), array (
             'id' => 'bitmex',
             'name' => 'BitMEX',
-            'countries' => 'SC', // Seychelles
+            'countries' => array ( 'SC' ), // Seychelles
             'version' => 'v1',
             'userAgent' => null,
             'rateLimit' => 2000,
@@ -43,6 +43,7 @@ class bitmex extends Exchange {
                     'https://github.com/BitMEX/api-connectors/tree/master/official-http',
                 ),
                 'fees' => 'https://www.bitmex.com/app/fees',
+                'referral' => 'https://www.bitmex.com/register/rm3C16',
             ),
             'api' => array (
                 'public' => array (
@@ -135,7 +136,7 @@ class bitmex extends Exchange {
                 'Access Denied' => '\\ccxt\\PermissionDenied',
             ),
             'options' => array (
-                'fetchTickerQuotes' => true,
+                'fetchTickerQuotes' => false,
             ),
         ));
     }

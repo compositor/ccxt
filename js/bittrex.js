@@ -12,7 +12,7 @@ module.exports = class bittrex extends Exchange {
         return this.deepExtend (super.describe (), {
             'id': 'bittrex',
             'name': 'Bittrex',
-            'countries': 'US',
+            'countries': [ 'US' ],
             'version': 'v1.1',
             'rateLimit': 1500,
             // new metainfo interface
@@ -145,7 +145,7 @@ module.exports = class bittrex extends Exchange {
                 'INSUFFICIENT_FUNDS': InsufficientFunds,
                 'QUANTITY_NOT_PROVIDED': InvalidOrder,
                 'MIN_TRADE_REQUIREMENT_NOT_MET': InvalidOrder,
-                'ORDER_NOT_OPEN': InvalidOrder,
+                'ORDER_NOT_OPEN': OrderNotFound,
                 'INVALID_ORDER': InvalidOrder,
                 'UUID_INVALID': OrderNotFound,
                 'RATE_NOT_PROVIDED': InvalidOrder, // createLimitBuyOrder ('ETH/BTC', 1, 0)
@@ -157,6 +157,7 @@ module.exports = class bittrex extends Exchange {
             },
             'commonCurrencies': {
                 'BITS': 'SWIFT',
+                'CPC': 'CapriCoin',
             },
         });
     }

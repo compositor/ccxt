@@ -29,7 +29,7 @@ class cryptopia (Exchange):
             'id': 'cryptopia',
             'name': 'Cryptopia',
             'rateLimit': 1500,
-            'countries': 'NZ',  # New Zealand
+            'countries': ['NZ'],  # New Zealand
             'has': {
                 'CORS': False,
                 'createMarketOrder': False,
@@ -115,6 +115,7 @@ class cryptopia (Exchange):
                 'BAT': 'BatCoin',
                 'BLZ': 'BlazeCoin',
                 'BTG': 'Bitgem',
+                'CAN': 'CanYa',
                 'CAT': 'Catcoin',
                 'CC': 'CCX',
                 'CMT': 'Comet',
@@ -122,10 +123,13 @@ class cryptopia (Exchange):
                 'FCN': 'Facilecoin',
                 'FUEL': 'FC2',  # FuelCoin != FUEL
                 'HAV': 'Havecoin',
+                'KARM': 'KARMA',
                 'LBTC': 'LiteBitcoin',
                 'LDC': 'LADACoin',
                 'MARKS': 'Bitmark',
                 'NET': 'NetCoin',
+                'RED': 'RedCoin',
+                'STC': 'StopTrumpCoin',
                 'QBT': 'Cubits',
                 'WRC': 'WarCoin',
             },

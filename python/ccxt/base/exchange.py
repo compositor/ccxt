@@ -4,7 +4,7 @@
 
 # -----------------------------------------------------------------------------
 
-__version__ = '1.14.268'
+__version__ = '1.15.9'
 
 # -----------------------------------------------------------------------------
 
@@ -680,7 +680,7 @@ class Exchange(object):
 
         try:
             utc = datetime.datetime.utcfromtimestamp(timestamp // 1000)
-            return utc.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-6] + "{:<03d}".format(int(timestamp) % 1000) + 'Z'
+            return utc.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-6] + "{:03d}".format(int(timestamp) % 1000) + 'Z'
         except (TypeError, OverflowError, OSError):
             return None
 

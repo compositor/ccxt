@@ -3,7 +3,7 @@
 //  ---------------------------------------------------------------------------
 
 const Exchange = require ('./base/Exchange');
-const { ExchangeError, ExchangeNotAvailable, InvalidOrder, OrderNotFound, InsufficientFunds } = require ('./base/errors');
+const { AuthenticationError, ExchangeError, ExchangeNotAvailable, InvalidOrder, OrderNotFound, InsufficientFunds } = require ('./base/errors');
 
 //  ---------------------------------------------------------------------------
 
@@ -12,7 +12,7 @@ module.exports = class huobipro extends Exchange {
         return this.deepExtend (super.describe (), {
             'id': 'huobipro',
             'name': 'Huobi Pro',
-            'countries': 'CN',
+            'countries': [ 'CN' ],
             'rateLimit': 2000,
             'userAgent': this.userAgents['chrome39'],
             'version': 'v1',
@@ -118,6 +118,7 @@ module.exports = class huobipro extends Exchange {
                 'order-orderstate-error': OrderNotFound, // canceling an already canceled order
                 'order-queryorder-invalid': OrderNotFound, // querying a non-existent order
                 'order-update-error': ExchangeNotAvailable, // undocumented error
+                'api-signature-check-failed': AuthenticationError,
             },
             'options': {
                 'createMarketBuyOrderRequiresPrice': true,

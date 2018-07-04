@@ -22,7 +22,7 @@
 
 # ----------------------------------------------------------------------------
 
-__version__ = '1.14.268'
+__version__ = '1.15.9'
 
 # ----------------------------------------------------------------------------
 
@@ -120,10 +120,12 @@ from ccxt.cointiger import cointiger                        # noqa: F401
 from ccxt.coolcoin import coolcoin                          # noqa: F401
 from ccxt.crypton import crypton                            # noqa: F401
 from ccxt.cryptopia import cryptopia                        # noqa: F401
+from ccxt.deribit import deribit                            # noqa: F401
 from ccxt.dsx import dsx                                    # noqa: F401
 from ccxt.ethfinex import ethfinex                          # noqa: F401
 from ccxt.exmo import exmo                                  # noqa: F401
 from ccxt.exx import exx                                    # noqa: F401
+from ccxt.fcoin import fcoin                                # noqa: F401
 from ccxt.flowbtc import flowbtc                            # noqa: F401
 from ccxt.foxbit import foxbit                              # noqa: F401
 from ccxt.fybse import fybse                                # noqa: F401
@@ -243,10 +245,12 @@ exchanges = [
     'coolcoin',
     'crypton',
     'cryptopia',
+    'deribit',
     'dsx',
     'ethfinex',
     'exmo',
     'exx',
+    'fcoin',
     'flowbtc',
     'foxbit',
     'fybse',

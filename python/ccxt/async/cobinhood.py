@@ -18,7 +18,7 @@ class cobinhood (Exchange):
         return self.deep_extend(super(cobinhood, self).describe(), {
             'id': 'cobinhood',
             'name': 'COBINHOOD',
-            'countries': 'TW',
+            'countries': ['TW'],
             'rateLimit': 1000 / 10,
             'has': {
                 'fetchCurrencies': True,
@@ -47,8 +47,8 @@ class cobinhood (Exchange):
                 '6h': '6h',
                 '12h': '12h',
                 '1d': '1D',
-                '7d': '7D',
-                '14d': '14D',
+                '1w': '7D',
+                '2w': '14D',
                 '1M': '1M',
             },
             'urls': {

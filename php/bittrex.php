@@ -13,7 +13,7 @@ class bittrex extends Exchange {
         return array_replace_recursive (parent::describe (), array (
             'id' => 'bittrex',
             'name' => 'Bittrex',
-            'countries' => 'US',
+            'countries' => array ( 'US' ),
             'version' => 'v1.1',
             'rateLimit' => 1500,
             // new metainfo interface
@@ -146,7 +146,7 @@ class bittrex extends Exchange {
                 'INSUFFICIENT_FUNDS' => '\\ccxt\\InsufficientFunds',
                 'QUANTITY_NOT_PROVIDED' => '\\ccxt\\InvalidOrder',
                 'MIN_TRADE_REQUIREMENT_NOT_MET' => '\\ccxt\\InvalidOrder',
-                'ORDER_NOT_OPEN' => '\\ccxt\\InvalidOrder',
+                'ORDER_NOT_OPEN' => '\\ccxt\\OrderNotFound',
                 'INVALID_ORDER' => '\\ccxt\\InvalidOrder',
                 'UUID_INVALID' => '\\ccxt\\OrderNotFound',
                 'RATE_NOT_PROVIDED' => '\\ccxt\\InvalidOrder', // createLimitBuyOrder ('ETH/BTC', 1, 0)
@@ -158,6 +158,7 @@ class bittrex extends Exchange {
             ),
             'commonCurrencies' => array (
                 'BITS' => 'SWIFT',
+                'CPC' => 'CapriCoin',
             ),
         ));
     }

@@ -27,7 +27,7 @@ class poloniex (Exchange):
         return self.deep_extend(super(poloniex, self).describe(), {
             'id': 'poloniex',
             'name': 'Poloniex',
-            'countries': 'US',
+            'countries': ['US'],
             'rateLimit': 1000,  # up to 6 calls per second
             'has': {
                 'createDepositAddress': True,
@@ -139,9 +139,21 @@ class poloniex (Exchange):
                 'price': 8,
             },
             'commonCurrencies': {
-                'BTM': 'Bitmark',
-                'STR': 'XLM',
+                'AIR': 'AirCoin',
+                'APH': 'AphroditeCoin',
                 'BCC': 'BTCtalkcoin',
+                'BDG': 'Badgercoin',
+                'BTM': 'Bitmark',
+                'CON': 'Coino',
+                'GOLD': 'GoldEagles',
+                'GPUC': 'GPU',
+                'HOT': 'Hotcoin',
+                'ITC': 'Information Coin',
+                'PLX': 'ParallaxCoin',
+                'KEY': 'KEYCoin',
+                'STR': 'XLM',
+                'SOC': 'SOCC',
+                'XAP': 'API Coin',
             },
             'options': {
                 'limits': {
@@ -525,7 +537,7 @@ class poloniex (Exchange):
             'fee': None,
         }
 
-    def parse_open_orders(self, orders, market, result=[]):
+    def parse_open_orders(self, orders, market, result):
         for i in range(0, len(orders)):
             order = orders[i]
             extended = self.extend(order, {
@@ -708,6 +720,7 @@ class poloniex (Exchange):
         return self.parse_trades(trades)
 
     def create_deposit_address(self, code, params={}):
+        self.load_markets()
         currency = self.currency(code)
         response = self.privatePostGenerateNewAddress({
             'currency': currency['id'],
@@ -724,6 +737,7 @@ class poloniex (Exchange):
         }
 
     def fetch_deposit_address(self, code, params={}):
+        self.load_markets()
         currency = self.currency(code)
         response = self.privatePostReturnDepositAddresses()
         currencyId = currency['id']

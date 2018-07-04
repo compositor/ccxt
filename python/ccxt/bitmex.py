@@ -18,7 +18,7 @@ class bitmex (Exchange):
         return self.deep_extend(super(bitmex, self).describe(), {
             'id': 'bitmex',
             'name': 'BitMEX',
-            'countries': 'SC',  # Seychelles
+            'countries': ['SC'],  # Seychelles
             'version': 'v1',
             'userAgent': None,
             'rateLimit': 2000,
@@ -48,6 +48,7 @@ class bitmex (Exchange):
                     'https://github.com/BitMEX/api-connectors/tree/master/official-http',
                 ],
                 'fees': 'https://www.bitmex.com/app/fees',
+                'referral': 'https://www.bitmex.com/register/rm3C16',
             },
             'api': {
                 'public': {
@@ -140,7 +141,7 @@ class bitmex (Exchange):
                 'Access Denied': PermissionDenied,
             },
             'options': {
-                'fetchTickerQuotes': True,
+                'fetchTickerQuotes': False,
             },
         })
 
