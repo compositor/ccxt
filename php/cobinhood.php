@@ -21,6 +21,7 @@ class cobinhood extends Exchange {
                 'fetchOHLCV' => true,
                 'fetchOpenOrders' => true,
                 'fetchClosedOrders' => true,
+                'fetchOrderTrades' => true,
                 'fetchOrder' => true,
                 'fetchDepositAddress' => true,
                 'createDepositAddress' => true,
@@ -131,8 +132,12 @@ class cobinhood extends Exchange {
             ),
             'exceptions' => array (
                 'insufficient_balance' => '\\ccxt\\InsufficientFunds',
+                'invalid_order_size' => '\\ccxt\\InvalidOrder',
                 'invalid_nonce' => '\\ccxt\\InvalidNonce',
                 'unauthorized_scope' => '\\ccxt\\PermissionDenied',
+            ),
+            'commonCurrencies' => array (
+                'SMT' => 'SocialMedia.Market',
             ),
         ));
     }
@@ -427,7 +432,9 @@ class cobinhood extends Exchange {
             if ($filled !== null) {
                 $remaining = $amount - $filled;
             }
-            if ($price !== null) {
+            if ($filled !== null && $price !== null) {
+                $cost = $price * $filled;
+            } else if ($price !== null) {
                 $cost = $price * $amount;
             }
         }

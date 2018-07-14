@@ -219,7 +219,7 @@ class fcoin (Exchange):
     def fetch_order_book(self, symbol=None, limit=None, params={}):
         self.load_markets()
         if limit is not None:
-            if (limit == 20) and(limit == 100):
+            if (limit == 20) or (limit == 100):
                 limit = 'L' + str(limit)
             else:
                 raise ExchangeError(self.id + ' fetchOrderBook supports limit of 20, 100 or no limit. Other values are not accepted')
@@ -245,8 +245,6 @@ class fcoin (Exchange):
         timestamp = None
         symbol = None
         if market is None:
-            symbol = market['symbol']
-        else:
             tickerType = self.safe_string(ticker, 'type')
             if tickerType is not None:
                 parts = tickerType.split('.')
@@ -408,7 +406,7 @@ class fcoin (Exchange):
             'order_id': id,
         }, params)
         response = self.privateGetOrdersOrderId(request)
-        return self.parse_order(response)
+        return self.parse_order(response['data'])
 
     def fetch_open_orders(self, symbol=None, since=None, limit=None, params={}):
         result = self.fetch_orders(symbol, since, limit, {'states': 'submitted'})

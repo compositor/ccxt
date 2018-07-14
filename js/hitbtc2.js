@@ -787,7 +787,7 @@ module.exports = class hitbtc2 extends hitbtc {
     parseTrade (trade, market = undefined) {
         let timestamp = this.parse8601 (trade['timestamp']);
         let symbol = undefined;
-        if (market) {
+        if (typeof market !== 'undefined') {
             symbol = market['symbol'];
         } else {
             let id = trade['symbol'];
@@ -831,9 +831,14 @@ module.exports = class hitbtc2 extends hitbtc {
     async fetchTrades (symbol, since = undefined, limit = undefined, params = {}) {
         await this.loadMarkets ();
         let market = this.market (symbol);
-        let response = await this.publicGetTradesSymbol (this.extend ({
+        const request = {
             'symbol': market['id'],
-        }, params));
+        };
+        if (typeof limit !== 'undefined')
+            request['limit'] = limit;
+        if (typeof since !== 'undefined')
+            request['from'] = this.iso8601 (since);
+        let response = await this.publicGetTradesSymbol (this.extend (request, params));
         return this.parseTrades (response, market, since, limit);
     }
 
@@ -860,6 +865,8 @@ module.exports = class hitbtc2 extends hitbtc {
         }
         let response = await this.privatePostOrder (this.extend (request, params));
         let order = this.parseOrder (response);
+        if (order['status'] === 'rejected')
+            throw new InvalidOrder (this.id + ' order was rejected by the exchange ' + this.json (order));
         let id = order['id'];
         this.orders[id] = order;
         return order;
@@ -974,7 +981,7 @@ module.exports = class hitbtc2 extends hitbtc {
         await this.loadMarkets ();
         let market = undefined;
         let request = {};
-        if (symbol) {
+        if (typeof symbol !== 'undefined') {
             market = this.market (symbol);
             request['symbol'] = market['id'];
         }
@@ -986,7 +993,7 @@ module.exports = class hitbtc2 extends hitbtc {
         await this.loadMarkets ();
         let market = undefined;
         let request = {};
-        if (symbol) {
+        if (typeof symbol !== 'undefined') {
             market = this.market (symbol);
             request['symbol'] = market['id'];
         }
@@ -1012,7 +1019,7 @@ module.exports = class hitbtc2 extends hitbtc {
             // 'offset': 0,
         };
         let market = undefined;
-        if (symbol) {
+        if (typeof symbol !== 'undefined') {
             market = this.market (symbol);
             request['symbol'] = market['id'];
         }
@@ -1076,6 +1083,7 @@ module.exports = class hitbtc2 extends hitbtc {
     }
 
     async withdraw (code, amount, address, tag = undefined, params = {}) {
+        await this.loadMarkets ();
         this.checkAddress (address);
         let currency = this.currency (code);
         let request = {

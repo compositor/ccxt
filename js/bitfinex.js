@@ -245,6 +245,7 @@ module.exports = class bitfinex extends Exchange {
                 },
             },
             'commonCurrencies': {
+                'ATM': 'Atonomi', // issue #3383
                 'BCC': 'CST_BCC',
                 'BCU': 'CST_BCU',
                 'CTX': 'CTXC',
@@ -253,6 +254,7 @@ module.exports = class bitfinex extends Exchange {
                 'IOS': 'IOST',
                 'IOT': 'IOTA',
                 'MNA': 'MANA',
+                'ORS': 'ORS Group', // conflict with Origin Sport #3230
                 'QSH': 'QASH',
                 'QTM': 'QTUM',
                 'SNG': 'SNGLS',
@@ -614,6 +616,8 @@ module.exports = class bitfinex extends Exchange {
     }
 
     async fetchMyTrades (symbol = undefined, since = undefined, limit = undefined, params = {}) {
+        if (typeof symbol === 'undefined')
+            throw new ExchangeError (this.id + ' fetchMyTrades requires a symbol argument');
         await this.loadMarkets ();
         let market = this.market (symbol);
         let request = { 'symbol': market['id'] };
@@ -667,13 +671,13 @@ module.exports = class bitfinex extends Exchange {
             status = 'closed';
         }
         let symbol = undefined;
-        if (!market) {
+        if (typeof market === 'undefined') {
             let exchange = order['symbol'].toUpperCase ();
             if (exchange in this.markets_by_id) {
                 market = this.markets_by_id[exchange];
             }
         }
-        if (market)
+        if (typeof market !== 'undefined')
             symbol = market['symbol'];
         let orderType = order['type'];
         let exchange = orderType.indexOf ('exchange ') >= 0;
@@ -709,7 +713,7 @@ module.exports = class bitfinex extends Exchange {
                 throw new ExchangeError (this.id + ' has no symbol ' + symbol);
         let response = await this.privatePostOrders (params);
         let orders = this.parseOrders (response, undefined, since, limit);
-        if (symbol)
+        if (typeof symbol !== 'undefined')
             orders = this.filterBy (orders, 'symbol', symbol);
         return orders;
     }

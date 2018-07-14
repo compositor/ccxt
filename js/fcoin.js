@@ -209,7 +209,7 @@ module.exports = class fcoin extends Exchange {
     async fetchOrderBook (symbol = undefined, limit = undefined, params = {}) {
         await this.loadMarkets ();
         if (typeof limit !== 'undefined') {
-            if ((limit === 20) && (limit === 100)) {
+            if ((limit === 20) || (limit === 100)) {
                 limit = 'L' + limit.toString ();
             } else {
                 throw new ExchangeError (this.id + ' fetchOrderBook supports limit of 20, 100 or no limit. Other values are not accepted');
@@ -239,8 +239,6 @@ module.exports = class fcoin extends Exchange {
         let timestamp = undefined;
         let symbol = undefined;
         if (typeof market === 'undefined') {
-            symbol = market['symbol'];
-        } else {
             let tickerType = this.safeString (ticker, 'type');
             if (typeof tickerType !== 'undefined') {
                 let parts = tickerType.split ('.');
@@ -423,7 +421,7 @@ module.exports = class fcoin extends Exchange {
             'order_id': id,
         }, params);
         let response = await this.privateGetOrdersOrderId (request);
-        return this.parseOrder (response);
+        return this.parseOrder (response['data']);
     }
 
     async fetchOpenOrders (symbol = undefined, since = undefined, limit = undefined, params = {}) {

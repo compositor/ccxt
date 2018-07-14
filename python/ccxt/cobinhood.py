@@ -26,6 +26,7 @@ class cobinhood (Exchange):
                 'fetchOHLCV': True,
                 'fetchOpenOrders': True,
                 'fetchClosedOrders': True,
+                'fetchOrderTrades': True,
                 'fetchOrder': True,
                 'fetchDepositAddress': True,
                 'createDepositAddress': True,
@@ -136,8 +137,12 @@ class cobinhood (Exchange):
             },
             'exceptions': {
                 'insufficient_balance': InsufficientFunds,
+                'invalid_order_size': InvalidOrder,
                 'invalid_nonce': InvalidNonce,
                 'unauthorized_scope': PermissionDenied,
+            },
+            'commonCurrencies': {
+                'SMT': 'SocialMedia.Market',
             },
         })
 
@@ -412,7 +417,9 @@ class cobinhood (Exchange):
         if amount is not None:
             if filled is not None:
                 remaining = amount - filled
-            if price is not None:
+            if filled is not None and price is not None:
+                cost = price * filled
+            elif price is not None:
                 cost = price * amount
         status = self.parse_order_status(self.safe_string(order, 'state'))
         side = self.safe_string(order, 'side')
