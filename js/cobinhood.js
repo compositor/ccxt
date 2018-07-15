@@ -307,7 +307,7 @@ module.exports = class cobinhood extends Exchange {
         let timestamp = trade['timestamp'];
         let price = this.safeFloat (trade, 'price');
         let amount = this.safeFloat (trade, 'size');
-        let cost = parseFloat (this.costToPrecision (symbol, price * amount));
+        let cost = price * amount;
         let side = trade['maker_side'] === 'bid' ? 'sell' : 'buy';
         return {
             'info': trade,
@@ -509,7 +509,7 @@ module.exports = class cobinhood extends Exchange {
         return orders;
     }
 
-    async fetchOrderTrades (id, symbol = undefined, params = {}) {
+    async fetchOrderTrades (id, symbol = undefined, since = undefined, limit = undefined, params = {}) {
         await this.loadMarkets ();
         let response = await this.privateGetTradingOrdersOrderIdTrades (this.extend ({
             'order_id': id,
