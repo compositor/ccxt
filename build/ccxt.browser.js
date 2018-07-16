@@ -45,7 +45,7 @@ const Exchange  = require ('./js/base/Exchange')
 //-----------------------------------------------------------------------------
 // this is updated by vss.js when building
 
-const version = '1.16.36'
+const version = '1.16.38'
 
 Exchange.ccxtVersion = version
 
@@ -1774,10 +1774,6 @@ module.exports = class Exchange {
 
             // undefined, null and lots of nasty non-numeric values yield NaN
             if (isNaN (_timestampNumber) || _timestampNumber < 0) {
-                return undefined;
-            }
-
-            if (_timestampNumber < 0) {
                 return undefined;
             }
 
@@ -25878,7 +25874,10 @@ module.exports = class cryptopia extends Exchange {
                 }
             }
         }
-        let timestamp = this.parse8601 (order['TimeStamp']);
+        let timestamp = this.safeString (order, 'TimeStamp');
+        if (typeof timestamp !== 'undefined') {
+            timestamp = this.parse8601 (order['TimeStamp']);
+        }
         let datetime = undefined;
         if (timestamp) {
             datetime = this.iso8601 (timestamp);
@@ -30218,6 +30217,9 @@ module.exports = class gateio extends Exchange {
         let feeCost = this.safeFloat (order, 'feeValue');
         let feeCurrency = this.safeString (order, 'feeCurrency');
         let feeRate = this.safeFloat (order, 'feePercentage');
+        if (typeof feeRate !== 'undefined') {
+            feeRate = feeRate / 100;
+        }
         if (typeof feeCurrency !== 'undefined') {
             if (feeCurrency in this.currencies_by_id) {
                 feeCurrency = this.currencies_by_id[feeCurrency]['code'];
@@ -39087,8 +39089,8 @@ module.exports = class lbank extends Exchange {
             let quote = this.commonCurrencyCode (quoteId.toUpperCase ());
             let symbol = base + '/' + quote;
             let precision = {
-                'amount': market['quantityAccuracy'],
-                'price': market['priceAccuracy'],
+                'amount': this.safeInteger (market, 'quantityAccuracy'),
+                'price': this.safeInteger (market, 'priceAccuracy'),
             };
             result.push ({
                 'id': id,
@@ -42790,6 +42792,7 @@ module.exports = class okcoinusd extends Exchange {
                     'get': [
                         'spot/markets/currencies',
                         'spot/markets/products',
+                        'spot/markets/tickers',
                     ],
                 },
                 'public': {
