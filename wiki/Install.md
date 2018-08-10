@@ -36,6 +36,24 @@ var ccxt = require ('ccxt')
 console.log (ccxt.exchanges) // print all available exchanges
 ```
 
+#### Node.js + Windows
+
+Windows users having difficulties installing `w3`, `scrypt` or `node-gyp` dependencies for the ccxt library, try installing `scrypt` first:
+
+```
+npm install -g web3 --unsafe-perm=true --allow-root
+```
+
+or
+
+```
+sudo npm install -g web3 --unsafe-perm=true --allow-root
+```
+
+Then install ccxt as usual with `npm install ccxt`.
+
+If that does not help, please, follow here: https://github.com/nodejs/node-gyp#on-windows
+
 ### JavaScript (for use with the `<script>` tag):
 
 [All-in-one browser bundle](https://unpkg.com/ccxt) (dependencies included), served from [unpkg CDN](https://unpkg.com/), which is a fast, global content delivery network for everything on NPM.

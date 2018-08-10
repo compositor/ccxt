@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "d7513b71d0eb9bf7ae1efe3a50d74693",
+    "content-hash": "4582ddfa7dc9a25bcfab1cfda9338f39",
     "packages": [
         {
             "name": "fgrosse/phpasn1",
@@ -206,27 +206,27 @@
         },
         {
             "name": "kornrunner/solidity",
-            "version": "0.0.6",
+            "version": "0.1.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/kornrunner/php-solidity.git",
-                "reference": "851bc44133f227e17f333f51583cafd8dc1afb89"
+                "reference": "12a2af6920d24ab52b683dfbbaaf3892cbf9bd22"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/kornrunner/php-solidity/zipball/851bc44133f227e17f333f51583cafd8dc1afb89",
-                "reference": "851bc44133f227e17f333f51583cafd8dc1afb89",
+                "url": "https://api.github.com/repos/kornrunner/php-solidity/zipball/12a2af6920d24ab52b683dfbbaaf3892cbf9bd22",
+                "reference": "12a2af6920d24ab52b683dfbbaaf3892cbf9bd22",
                 "shasum": ""
             },
             "require": {
-                "ext-gmp": "^7.1",
+                "ext-mbstring": "*",
                 "kornrunner/keccak": "^1.0",
                 "php": ">=7.1.0",
                 "simplito/bn-php": "^1.0"
             },
             "require-dev": {
-                "phpunit/phpunit": "^6.5",
-                "satooshi/php-coveralls": "~2"
+                "php-coveralls/php-coveralls": "^2.1",
+                "phpunit/phpunit": "~7"
             },
             "type": "library",
             "autoload": {
@@ -236,7 +236,7 @@
             },
             "notification-url": "https://packagist.org/downloads/",
             "license": [
-                "GPL-3.0"
+                "MIT"
             ],
             "authors": [
                 {
@@ -246,9 +246,11 @@
             ],
             "description": "Pure PHP implementation of Solidity",
             "keywords": [
+                "eth",
+                "ethereum",
                 "solidity"
             ],
-            "time": "2018-02-28T12:45:01+00:00"
+            "time": "2018-07-30T10:27:16+00:00"
         },
         {
             "name": "mdanter/ecc",
@@ -321,6 +323,61 @@
                 "secp256r1"
             ],
             "time": "2017-10-09T16:05:37+00:00"
+        },
+        {
+            "name": "pear/console_table",
+            "version": "v1.3.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/pear/Console_Table.git",
+                "reference": "1930c11897ca61fd24b95f2f785e99e0f36dcdea"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/pear/Console_Table/zipball/1930c11897ca61fd24b95f2f785e99e0f36dcdea",
+                "reference": "1930c11897ca61fd24b95f2f785e99e0f36dcdea",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.2.0"
+            },
+            "suggest": {
+                "pear/Console_Color2": ">=0.1.2"
+            },
+            "type": "library",
+            "autoload": {
+                "classmap": [
+                    "Table.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD-2-Clause"
+            ],
+            "authors": [
+                {
+                    "name": "Jan Schneider",
+                    "homepage": "http://pear.php.net/user/yunosh"
+                },
+                {
+                    "name": "Tal Peer",
+                    "homepage": "http://pear.php.net/user/tal"
+                },
+                {
+                    "name": "Xavier Noguer",
+                    "homepage": "http://pear.php.net/user/xnoguer"
+                },
+                {
+                    "name": "Richard Heyes",
+                    "homepage": "http://pear.php.net/user/richard"
+                }
+            ],
+            "description": "Library that makes it easy to build console style tables.",
+            "homepage": "http://pear.php.net/package/Console_Table/",
+            "keywords": [
+                "console"
+            ],
+            "time": "2018-01-25T20:47:17+00:00"
         },
         {
             "name": "simplito/bigint-wrapper-php",

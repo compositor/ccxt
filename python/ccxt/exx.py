@@ -95,6 +95,7 @@ class exx (Exchange):
             },
             'commonCurrencies': {
                 'CAN': 'Content and AD Network',
+                'TV': 'TIV',  # Ti-Value
             },
             'exceptions': {
                 '103': AuthenticationError,
@@ -119,7 +120,6 @@ class exx (Exchange):
                 'amount': int(market['amountScale']),
                 'price': int(market['priceScale']),
             }
-            lot = math.pow(10, -precision['amount'])
             result.append({
                 'id': id,
                 'symbol': symbol,
@@ -128,11 +128,10 @@ class exx (Exchange):
                 'baseId': baseId,
                 'quoteId': quoteId,
                 'active': active,
-                'lot': lot,
                 'precision': precision,
                 'limits': {
                     'amount': {
-                        'min': lot,
+                        'min': math.pow(10, -precision['amount']),
                         'max': math.pow(10, precision['amount']),
                     },
                     'price': {

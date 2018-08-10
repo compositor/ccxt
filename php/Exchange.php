@@ -34,7 +34,7 @@ use kornrunner\Eth;
 use kornrunner\Secp256k1;
 use kornrunner\Solidity;
 
-$version = '1.17.4';
+$version = '1.17.101';
 
 // rounding mode
 const TRUNCATE = 0;
@@ -50,7 +50,7 @@ const PAD_WITH_ZERO = 1;
 
 class Exchange {
 
-    const VERSION = '1.17.4';
+    const VERSION = '1.17.101';
 
     public static $eth_units = array (
         'wei'        => '1',
@@ -86,6 +86,7 @@ class Exchange {
         'allcoin',
         'anxpro',
         'anybits',
+        'bcex',
         'bibox',
         'bigone',
         'binance',
@@ -687,13 +688,14 @@ class Exchange {
             'defaultCost' => 1.0,
             'maxCapacity' => 1000,
         );
-        $this->timeout     = 10000; // in milliseconds
-        $this->proxy       = '';
-        $this->origin      = '*'; // CORS origin
-        $this->headers     = array ();
-        $this->curlopt_interface = null;
 
-        $this->options     = array (); // exchange-specific options if any
+        $this->curlopt_interface = null;
+        $this->timeout   = 10000; // in milliseconds
+        $this->proxy     = '';
+        $this->origin    = '*'; // CORS origin
+        $this->headers   = array ();
+
+        $this->options   = array (); // exchange-specific options if any
 
         $this->skipJsonOnStatusCodes = false; // TODO: reserved, rewrite the curl routine to parse JSON body anyway
 
@@ -705,27 +707,28 @@ class Exchange {
         $this->api       = array ();
         $this->comment   = null;
 
-        $this->markets     = null;
-        $this->symbols     = null;
-        $this->ids         = null;
-        $this->currencies  = array ();
-        $this->balance     = array ();
-        $this->orderbooks  = array ();
-        $this->fees        = array ('trading' => array (), 'funding' => array ());
-        $this->precision   = array ();
-        $this->limits      = array ();
-        $this->orders      = array ();
-        $this->trades      = array ();
-        $this->exceptions  = array ();
-        $this->verbose     = false;
-        $this->apiKey      = '';
-        $this->secret      = '';
-        $this->password    = '';
-        $this->uid         = '';
-        $this->privateKey  = '';
+        $this->markets       = null;
+        $this->symbols       = null;
+        $this->ids           = null;
+        $this->currencies    = array ();
+        $this->balance       = array ();
+        $this->orderbooks    = array ();
+        $this->fees          = array ('trading' => array (), 'funding' => array ());
+        $this->precision     = array ();
+        $this->limits        = array ();
+        $this->orders        = array ();
+        $this->trades        = array ();
+        $this->transactions  = array ();
+        $this->exceptions    = array ();
+        $this->verbose       = false;
+        $this->apiKey        = '';
+        $this->secret        = '';
+        $this->password      = '';
+        $this->uid           = '';
+        $this->privateKey    = '';
         $this->walletAddress = '';
-        $this->twofa       = false;
-        $this->marketsById = null;
+        $this->twofa         = false;
+        $this->marketsById   = null;
         $this->markets_by_id = null;
         $this->currencies_by_id = null;
         $this->userAgent   = null; // 'ccxt/' . $this::VERSION . ' (+https://github.com/ccxt/ccxt) PHP/' . PHP_VERSION;
@@ -1262,7 +1265,7 @@ class Exchange {
                 continue;
             $result[] = $ohlcv;
         }
-        return $result;
+        return $this->sort_by ($result, 0);
     }
 
     public function parseOHLCVs ($ohlcvs, $market = null, $timeframe = 60, $since = null, $limit = null) {
@@ -1756,12 +1759,22 @@ class Exchange {
     }
 
     public function currency_id ($commonCode) {
+
+        if (!$this->currencies) {
+            throw new ExchangeError ($this->id . ' currencies not loaded');
+        }
+
+        if (array_key_exists ($commonCode, $this->currencies)) {
+            return $this->currencies[$commonCode]['id'];
+        }
+
         $currencyIds = array ();
         $distinct = is_array ($this->commonCurrencies) ? array_keys ($this->commonCurrencies) : array ();
         for ($i = 0; $i < count ($distinct); $i++) {
             $k = $distinct[$i];
             $currencyIds[$this->commonCurrencies[$k]] = $k;
         }
+
         return $this->safe_string($currencyIds, $commonCode, $commonCode);
     }
 
@@ -1810,21 +1823,12 @@ class Exchange {
         return $this->truncate_to_string (floatval ($amount), $this->markets[$symbol]['precision']['amount']);
     }
 
-    public function amount_to_lots ($symbol, $amount) {
-        $lot = $this->markets[$symbol]['lot'];
-        return $this->amount_to_precision ($symbol, floor (floatval ($amount) / $lot) * $lot);
-    }
-
     public function amountToPrecision ($symbol, $amount) {
         return $this->amount_to_precision ($symbol, $amount);
     }
 
     public function amountToString ($symbol, $amount) {
         return $this->amount_to_string ($symbol, $amount);
-    }
-
-    public function amountToLots ($symbol, $amount) {
-        return $this->amount_to_lots ($symbol, $amount);
     }
 
     public function fee_to_precision ($symbol, $fee) {
@@ -2041,7 +2045,6 @@ class Exchange {
     // }
 
     public function getZeroExOrderHash ($order) {
-        // throw new NotSupported ($this->id . ' soliditySha3 () not implemented in PHP yet');
 
         // $unpacked = array (
         //     "0x90fe2af704b34e0224bf2299c838e04d4dcf1364", // exchangeContractAddress
@@ -2049,19 +2052,17 @@ class Exchange {
         //     "0x00ba938cc0df182c25108d7bf2ee3d37bce07513", // taker
         //     "0xd0a1e359811322d97991e03f863a0c30c2cf029c", // makerTokenAddress
         //     "0x6ff6c0ff1d68b964901f986d4c9fa3ac68346570", // takerTokenAddress
+        //     "0x88a64b5e882e5ad851bea5e7a3c8ba7c523fecbe", // feeRecipient
         //     "27100000000000000", // makerTokenAmount
         //     "874377028175459241", // takerTokenAmount
         //     "0", // makerFee
         //     "0", // takerFee
         //     "1534809575", // expirationUnixTimestampSec
-        //     "0x88a64b5e882e5ad851bea5e7a3c8ba7c523fecbe", // feeRecipient
         //     "3610846705800197954038657082705100176266402776121341340841167002345284333867", // salt
         // );
-        //
+        // echo "0x" . call_user_func_array('\kornrunner\Solidity::sha3', $unpacked) . "\n";
         // should result in
         // 0xe815dc92933b68e7fc2b7102b8407ba7afb384e4080ac8d28ed42482933c5cf5
-        // echo call_user_func_array('\kornrunner\Solidity::sha3', $unpacked) . "\n";
-        // exit ();
 
         $unpacked = array (
             $order['exchangeContractAddress'],      // { value: order.exchangeContractAddress, type: types_1.SolidityTypes.Address },
@@ -2116,44 +2117,6 @@ class Exchange {
             's' => "0x" . gmp_strval ($signature->getS (), 16), // '0x'-prefixed hex string
         );
     }
-
-    // signMessage (message, privateKey) {
-    //     //
-    //     // The following comment is related to MetaMask, we use the upper type of signature prefix:
-    //     //
-    //     // z.ecSignOrderHashAsync ('0xcfdb0a485324ff37699b4c8557f6858f25916fc6fce5993b32fe018aea510b9f',
-    //     //                         '0x731fc101bbe102221c91c31ed0489f1ddfc439a3', {
-    //     //                              prefixType: 'ETH_SIGN',
-    //     //                              shouldAddPrefixBeforeCallingEthSign: true
-    //     //                          }).then ((e, r) => console.log (e,r))
-    //     //
-    //     //     {                            ↓
-    //     //         v: 28,
-    //     //         r: "0xea7a68268b47c48d5d7a4c900e6f9af0015bf70951b3db2f1d835c5d544aaec2",
-    //     //         s: "0x5d1db2a060c955c1fde4c967237b995c2361097405407b33c6046c8aeb3ccbdf"
-    //     //     }
-    //     //
-    //     // --------------------------------------------------------------------
-    //     //
-    //     // z.ecSignOrderHashAsync ('0xcfdb0a485324ff37699b4c8557f6858f25916fc6fce5993b32fe018aea510b9f',
-    //     //                         '0x731fc101bbe102221c91c31ed0489f1ddfc439a3', {
-    //     //                              prefixType: 'NONE',
-    //     //                              shouldAddPrefixBeforeCallingEthSign: true
-    //     //                          }).then ((e, r) => console.log (e,r))
-    //     //
-    //     //     {                            ↓
-    //     //         v: 27,
-    //     //         r: "0xc8c710022c57de4f529d448e9b40517dd9bfb49ff1eb245f5856664b865d14a6",
-    //     //         s: "0x0740bb21f4f094fbbdbafa903bb8f057f82e0c6e4fe65d19a1daed4ed97cd394"
-    //     //     }
-    //     //
-    //     const signature = this.decryptAccountFromPrivateKey (privateKey).sign (message, privateKey.slice (-64))
-    //     return {
-    //         v: parseInt (signature.v.slice (2), 16), // integer
-    //         r: signature.r, // '0x'-prefixed hex string
-    //         s: signature.s, // '0x'-prefixed hex string
-    //     }
-    // }
 
     public function signMessage ($message, $privateKey) {
         return $this->signHash ($this->hashMessage ($message), $privateKey);

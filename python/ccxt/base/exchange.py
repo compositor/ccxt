@@ -4,7 +4,7 @@
 
 # -----------------------------------------------------------------------------
 
-__version__ = '1.17.4'
+__version__ = '1.17.101'
 
 # -----------------------------------------------------------------------------
 
@@ -67,12 +67,18 @@ except NameError:
 
 try:
     import urllib.parse as _urlencode    # Python 3
-    # from web3.auto import w3             # web3/0x imports
-    from web3 import Web3, HTTPProvider
 except ImportError:
     import urllib as _urlencode          # Python 2
-    Web3 = HTTPProvider = None           # web3/0x not supported in Python 2
 
+# -----------------------------------------------------------------------------
+# web3/0x imports
+
+try:
+    # from web3.auto import w3
+    from web3 import Web3, HTTPProvider
+    from web3.utils.encoding import hex_encode_abi_type
+except ImportError:
+    Web3 = HTTPProvider = None  # web3/0x not supported in Python 2
 
 # -----------------------------------------------------------------------------
 
@@ -135,6 +141,7 @@ class Exchange(object):
     orderbooks = None
     orders = None
     trades = None
+    transactions = None
     currencies = None
     options = None  # Python does not allow to define properties in run-time with setattr
 
@@ -207,16 +214,17 @@ class Exchange(object):
 
     def __init__(self, config={}):
 
-        self.precision = {} if self.precision is None else self.precision
-        self.limits = {} if self.limits is None else self.limits
-        self.exceptions = {} if self.exceptions is None else self.exceptions
-        self.headers = {} if self.headers is None else self.headers
-        self.balance = {} if self.balance is None else self.balance
-        self.orderbooks = {} if self.orderbooks is None else self.orderbooks
-        self.orders = {} if self.orders is None else self.orders
-        self.trades = {} if self.trades is None else self.trades
-        self.currencies = {} if self.currencies is None else self.currencies
-        self.options = {} if self.options is None else self.options  # Python does not allow to define properties in run-time with setattr
+        self.precision = dict() if self.precision is None else self.precision
+        self.limits = dict() if self.limits is None else self.limits
+        self.exceptions = dict() if self.exceptions is None else self.exceptions
+        self.headers = dict() if self.headers is None else self.headers
+        self.balance = dict() if self.balance is None else self.balance
+        self.orderbooks = dict() if self.orderbooks is None else self.orderbooks
+        self.orders = dict() if self.orders is None else self.orders
+        self.trades = dict() if self.trades is None else self.trades
+        self.transactions = dict() if self.transactions is None else self.transactions
+        self.currencies = dict() if self.currencies is None else self.currencies
+        self.options = dict() if self.options is None else self.options  # Python does not allow to define properties in run-time with setattr
 
         self.decimalToPrecision = self.decimal_to_precision = decimal_to_precision
 
@@ -882,6 +890,11 @@ class Exchange(object):
         return self.safe_string(self.commonCurrencies, currency, currency)
 
     def currency_id(self, commonCode):
+
+        if self.currencies:
+            if commonCode in self.currencies:
+                return self.currencies[commonCode]['id']
+
         currencyIds = {v: k for k, v in self.commonCurrencies.items()}
         return self.safe_string(currencyIds, commonCode, commonCode)
 
@@ -910,10 +923,6 @@ class Exchange(object):
 
     def amount_to_string(self, symbol, amount):
         return self.truncate_to_string(amount, self.markets[symbol]['precision']['amount'])
-
-    def amount_to_lots(self, symbol, amount):
-        lot = self.markets[symbol]['lot']
-        return self.amount_to_precision(symbol, math.floor(amount / lot) * lot)
 
     def fee_to_precision(self, symbol, fee):
         return ('{:.' + str(self.markets[symbol]['precision']['price']) + 'f}').format(float(fee))
@@ -1000,6 +1009,9 @@ class Exchange(object):
     def fetch_markets(self):
         return self.to_array(self.markets)
 
+    def fetch_currencies(self):
+        return self.to_array(self.currencies)
+
     def fetch_fees(self):
         trading = {}
         funding = {}
@@ -1078,7 +1090,7 @@ class Exchange(object):
             if since and (ohlcv[0] < since):
                 continue
             result.append(ohlcv)
-        return result
+        return self.sort_by(result, 0)
 
     def parse_bid_ask(self, bidask, price_key=0, amount_key=0):
         return [float(bidask[price_key]), float(bidask[amount_key])]
@@ -1155,6 +1167,9 @@ class Exchange(object):
         self.load_markets()
         trades = self.fetch_trades(symbol, since, limit, params)
         return self.build_ohlcv(trades, timeframe, since, limit)
+
+    def fetchOHLCV(self, symbol, timeframe='1m', since=None, limit=None, params={}):
+        return self.fetch_ohlcv(symbol, timeframe, since, limit, params)
 
     def convert_trading_view_to_ohlcv(self, ohlcvs):
         result = []
@@ -1384,6 +1399,40 @@ class Exchange(object):
 
     def decryptAccountFromPrivateKey(self, privateKey):
         return self.web3.eth.accounts.privateKeyToAccount(privateKey)
+
+    def soliditySha3(self, array):
+        values = self.solidityValues(array)
+        types = self.solidityTypes(values)
+        return self.web3.soliditySha3(types, values).hex()
+
+    def soliditySha256(self, values):
+        types = self.solidityTypes(values)
+        solidity_values = self.solidityValues(values)
+        encoded_values = [hex_encode_abi_type(abi_type, value)[2:] for abi_type, value in zip(types, solidity_values)]
+        hex_string = '0x' + ''.join(encoded_values)
+        return '0x' + self.hash(self.encode(self.web3.toText(hex_string)), 'sha256')
+
+    def solidityTypes(self, array):
+        return ['address' if self.web3.isAddress(value) else 'uint256' for value in array]
+
+    def solidityValues(self, array):
+        return [self.web3.toChecksumAddress(value) if self.web3.isAddress(value) else int(value) for value in array]
+
+    def getZeroExOrderHash2(self, order):
+        return self.soliditySha3([
+            order['exchangeContractAddress'],  # address
+            order['maker'],  # address
+            order['taker'],  # address
+            order['makerTokenAddress'],  # address
+            order['takerTokenAddress'],  # address
+            order['feeRecipient'],  # address
+            order['makerTokenAmount'],  # uint256
+            order['takerTokenAmount'],  # uint256
+            order['makerFee'],  # uint256
+            order['takerFee'],  # uint256
+            order['expirationUnixTimestampSec'],  # uint256
+            order['salt'],  # uint256
+        ])
 
     def getZeroExOrderHash(self, order):
         unpacked = [

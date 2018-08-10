@@ -2,7 +2,7 @@
 
 # -----------------------------------------------------------------------------
 
-__version__ = '1.17.4'
+__version__ = '1.17.101'
 
 # -----------------------------------------------------------------------------
 
@@ -50,7 +50,7 @@ class Exchange(BaseExchange):
         self.asyncio_loop = self.asyncio_loop or asyncio.get_event_loop()
         self.own_session = 'session' not in config
         if self.own_session:
-            # Create out SSL context object with our CA cert file
+            # Create our SSL context object with our CA cert file
             context = ssl.create_default_context(cafile=certifi.where())
             # Pass this SSL context to aiohttp and create a TCPConnector
             connector = aiohttp.TCPConnector(ssl_context=context, loop=self.asyncio_loop)
@@ -65,7 +65,7 @@ class Exchange(BaseExchange):
 
     def __del__(self):
         if self.session is not None:
-            self.logger.warning(self.id + ' requires to release all resources with an explicit call to the .close() coroutine.')
+            self.logger.warning(self.id + " requires to release all resources with an explicit call to the .close() coroutine. If you are creating the exchange instance from within your async coroutine, add exchange.close() to your code into a place when you're done with the exchange and don't need the exchange instance anymore (at the end of your async coroutine).")
 
     async def close(self):
         if self.session is not None:
@@ -177,6 +177,9 @@ class Exchange(BaseExchange):
     async def fetch_markets(self):
         return self.markets
 
+    async def fetch_currencies(self):
+        return self.currencies
+
     async def fetch_order_status(self, id, market=None):
         order = await self.fetch_order(id)
         return order['status']
@@ -208,9 +211,11 @@ class Exchange(BaseExchange):
         trades = await self.fetch_trades(symbol, since, limit, params)
         return self.build_ohlcv(trades, timeframe, since, limit)
 
+    async def fetchOHLCV(self, symbol, timeframe='1m', since=None, limit=None, params={}):
+        return await self.fetch_ohlcv(symbol, timeframe, since, limit, params)
+
     async def fetch_full_tickers(self, symbols=None, params={}):
-        tickers = await self.fetch_tickers(symbols, params)
-        return tickers
+        return await self.fetch_tickers(symbols, params)
 
     async def edit_order(self, id, symbol, *args):
         if not self.enableRateLimit:

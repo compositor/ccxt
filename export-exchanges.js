@@ -17,7 +17,7 @@ let verbose = false
 
 let wikiPath = 'wiki'
 let gitWikiPath = 'ccxt.wiki'
-let ccxtCertifiedBadge = '![CCXT Certified](https://img.shields.io/badge/CCXT-certified-green.svg)'
+let ccxtCertifiedBadge = '[![CCXT Certified](https://img.shields.io/badge/CCXT-certified-green.svg)](https://github.com/ccxt/ccxt/wiki/Certification)'
 
 if (!fs.existsSync (gitWikiPath)) {
 

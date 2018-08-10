@@ -30,7 +30,7 @@ module.exports = class theocean extends Exchange {
             },
             'urls': {
                 'logo': 'https://user-images.githubusercontent.com/1294454/43103756-d56613ce-8ed7-11e8-924e-68f9d4bcacab.jpg',
-                'api': 'https://api.staging.theocean.trade/api',
+                'api': 'https://api.theocean.trade/api',
                 'www': 'https://theocean.trade',
                 'doc': 'https://docs.theocean.trade',
                 'fees': 'https://theocean.trade/fees',
@@ -135,8 +135,8 @@ module.exports = class theocean extends Exchange {
             let symbol = base + '/' + quote;
             let id = baseId + '/' + quoteId;
             let precision = {
-                'amount': this.safeInteger (baseToken, 'decimals'),
-                'price': this.safeInteger (quoteToken, 'decimals'),
+                'amount': this.safeInteger (baseToken, 'precision'),
+                'price': this.safeInteger (quoteToken, 'precision'),
             };
             let amountLimits = {
                 'min': this.fromWei (this.safeString (baseToken, 'minAmount')),
@@ -614,7 +614,7 @@ module.exports = class theocean extends Exchange {
         let signedTargetOrder = undefined;
         if ((isMarket && isMakerOrTakerUndefined) || isTaker) {
             if (isUnsignedMatchingOrderDefined) {
-                signedMatchingOrder = this.signZeroExOrder (this.extend (unsignedMatchingOrder, makerAddress));
+                signedMatchingOrder = this.signZeroExOrder (this.extend (unsignedMatchingOrder, makerAddress), this.privateKey);
                 placeRequest = this.extend (placeRequest, {
                     'signedMatchingOrder': signedMatchingOrder,
                     'matchingOrderID': reserveResponse['matchingOrderID'],
@@ -625,7 +625,7 @@ module.exports = class theocean extends Exchange {
         }
         if ((isLimit && isMakerOrTakerUndefined) || isMaker) {
             if (isUnsignedTargetOrderDefined) {
-                signedTargetOrder = this.signZeroExOrder (this.extend (unsignedTargetOrder, makerAddress));
+                signedTargetOrder = this.signZeroExOrder (this.extend (unsignedTargetOrder, makerAddress), this.privateKey);
                 placeRequest['signedTargetOrder'] = signedTargetOrder;
             } else if (isMaker) {
                 throw new OrderImmediatelyFillable (this.id + ' createOrder() ' + type + ' order to ' + side + ' ' + symbol + ' is not fillable as a maker order');
@@ -1026,6 +1026,10 @@ module.exports = class theocean extends Exchange {
             market = this.market (symbol);
             request['baseTokenAddress'] = market['baseId'];
             request['quoteTokenAddress'] = market['quoteId'];
+        }
+        if (typeof limit !== 'undefined') {
+            // request['start'] = 0; // offset
+            request['limit'] = limit;
         }
         let response = await this.privateGetUserHistory (this.extend (request, params));
         //

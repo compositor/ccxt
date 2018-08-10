@@ -34,7 +34,7 @@ class theocean extends Exchange {
             ),
             'urls' => array (
                 'logo' => 'https://user-images.githubusercontent.com/1294454/43103756-d56613ce-8ed7-11e8-924e-68f9d4bcacab.jpg',
-                'api' => 'https://api.staging.theocean.trade/api',
+                'api' => 'https://api.theocean.trade/api',
                 'www' => 'https://theocean.trade',
                 'doc' => 'https://docs.theocean.trade',
                 'fees' => 'https://theocean.trade/fees',
@@ -139,8 +139,8 @@ class theocean extends Exchange {
             $symbol = $base . '/' . $quote;
             $id = $baseId . '/' . $quoteId;
             $precision = array (
-                'amount' => $this->safe_integer($baseToken, 'decimals'),
-                'price' => $this->safe_integer($quoteToken, 'decimals'),
+                'amount' => $this->safe_integer($baseToken, 'precision'),
+                'price' => $this->safe_integer($quoteToken, 'precision'),
             );
             $amountLimits = array (
                 'min' => $this->fromWei ($this->safe_string($baseToken, 'minAmount')),
@@ -618,7 +618,7 @@ class theocean extends Exchange {
         $signedTargetOrder = null;
         if (($isMarket && $isMakerOrTakerUndefined) || $isTaker) {
             if ($isUnsignedMatchingOrderDefined) {
-                $signedMatchingOrder = $this->signZeroExOrder (array_merge ($unsignedMatchingOrder, $makerAddress));
+                $signedMatchingOrder = $this->signZeroExOrder (array_merge ($unsignedMatchingOrder, $makerAddress), $this->privateKey);
                 $placeRequest = array_merge ($placeRequest, array (
                     'signedMatchingOrder' => $signedMatchingOrder,
                     'matchingOrderID' => $reserveResponse['matchingOrderID'],
@@ -629,7 +629,7 @@ class theocean extends Exchange {
         }
         if (($isLimit && $isMakerOrTakerUndefined) || $isMaker) {
             if ($isUnsignedTargetOrderDefined) {
-                $signedTargetOrder = $this->signZeroExOrder (array_merge ($unsignedTargetOrder, $makerAddress));
+                $signedTargetOrder = $this->signZeroExOrder (array_merge ($unsignedTargetOrder, $makerAddress), $this->privateKey);
                 $placeRequest['signedTargetOrder'] = $signedTargetOrder;
             } else if ($isMaker) {
                 throw new OrderImmediatelyFillable ($this->id . ' createOrder() ' . $type . ' order to ' . $side . ' ' . $symbol . ' is not fillable as a $maker order');
@@ -1030,6 +1030,10 @@ class theocean extends Exchange {
             $market = $this->market ($symbol);
             $request['baseTokenAddress'] = $market['baseId'];
             $request['quoteTokenAddress'] = $market['quoteId'];
+        }
+        if ($limit !== null) {
+            // $request['start'] = 0; // offset
+            $request['limit'] = $limit;
         }
         $response = $this->privateGetUserHistory (array_merge ($request, $params));
         //

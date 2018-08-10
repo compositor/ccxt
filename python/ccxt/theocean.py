@@ -50,7 +50,7 @@ class theocean (Exchange):
             },
             'urls': {
                 'logo': 'https://user-images.githubusercontent.com/1294454/43103756-d56613ce-8ed7-11e8-924e-68f9d4bcacab.jpg',
-                'api': 'https://api.staging.theocean.trade/api',
+                'api': 'https://api.theocean.trade/api',
                 'www': 'https://theocean.trade',
                 'doc': 'https://docs.theocean.trade',
                 'fees': 'https://theocean.trade/fees',
@@ -152,8 +152,8 @@ class theocean (Exchange):
             symbol = base + '/' + quote
             id = baseId + '/' + quoteId
             precision = {
-                'amount': self.safe_integer(baseToken, 'decimals'),
-                'price': self.safe_integer(quoteToken, 'decimals'),
+                'amount': self.safe_integer(baseToken, 'precision'),
+                'price': self.safe_integer(quoteToken, 'precision'),
             }
             amountLimits = {
                 'min': self.fromWei(self.safe_string(baseToken, 'minAmount')),
@@ -602,7 +602,7 @@ class theocean (Exchange):
         signedTargetOrder = None
         if (isMarket and isMakerOrTakerUndefined) or isTaker:
             if isUnsignedMatchingOrderDefined:
-                signedMatchingOrder = self.signZeroExOrder(self.extend(unsignedMatchingOrder, makerAddress))
+                signedMatchingOrder = self.signZeroExOrder(self.extend(unsignedMatchingOrder, makerAddress), self.privateKey)
                 placeRequest = self.extend(placeRequest, {
                     'signedMatchingOrder': signedMatchingOrder,
                     'matchingOrderID': reserveResponse['matchingOrderID'],
@@ -611,7 +611,7 @@ class theocean (Exchange):
                 raise OrderNotFillable(self.id + ' createOrder() ' + type + ' order to ' + side + ' ' + symbol + ' is not fillable as a taker order')
         if (isLimit and isMakerOrTakerUndefined) or isMaker:
             if isUnsignedTargetOrderDefined:
-                signedTargetOrder = self.signZeroExOrder(self.extend(unsignedTargetOrder, makerAddress))
+                signedTargetOrder = self.signZeroExOrder(self.extend(unsignedTargetOrder, makerAddress), self.privateKey)
                 placeRequest['signedTargetOrder'] = signedTargetOrder
             elif isMaker:
                 raise OrderImmediatelyFillable(self.id + ' createOrder() ' + type + ' order to ' + side + ' ' + symbol + ' is not fillable as a maker order')
@@ -978,6 +978,9 @@ class theocean (Exchange):
             market = self.market(symbol)
             request['baseTokenAddress'] = market['baseId']
             request['quoteTokenAddress'] = market['quoteId']
+        if limit is not None:
+            # request['start'] = 0  # offset
+            request['limit'] = limit
         response = self.privateGetUserHistory(self.extend(request, params))
         #
         #     [
