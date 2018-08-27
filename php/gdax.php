@@ -288,6 +288,8 @@ class gdax extends Exchange {
         // GDAX returns inverted $side to fetchMyTrades vs fetchTrades
         if ($orderId !== null)
             $side = ($trade['side'] === 'buy') ? 'buy' : 'sell';
+        $price = $this->safe_float($trade, 'price');
+        $amount = $this->safe_float($trade, 'size');
         return array (
             'id' => $id,
             'order' => $orderId,
@@ -297,20 +299,23 @@ class gdax extends Exchange {
             'symbol' => $symbol,
             'type' => $type,
             'side' => $side,
-            'price' => $this->safe_float($trade, 'price'),
-            'amount' => $this->safe_float($trade, 'size'),
+            'price' => $price,
+            'amount' => $amount,
             'fee' => $fee,
+            'cost' => $price * $amount,
         );
     }
 
     public function fetch_my_trades ($symbol = null, $since = null, $limit = null, $params = array ()) {
-        $this->load_markets();
-        $market = null;
-        $request = array ();
-        if ($symbol !== null) {
-            $market = $this->market ($symbol);
-            $request['product_id'] = $market['id'];
+        // as of 2018-08-23
+        if ($symbol === null) {
+            throw new ExchangeError ($this->id . ' fetchMyTrades requires a $symbol argument');
         }
+        $this->load_markets();
+        $market = $this->market ($symbol);
+        $request = array (
+            'product_id' => $market['id'],
+        );
         if ($limit !== null)
             $request['limit'] = $limit;
         $response = $this->privateGetFills (array_merge ($request, $params));

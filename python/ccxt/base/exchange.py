@@ -4,7 +4,7 @@
 
 # -----------------------------------------------------------------------------
 
-__version__ = '1.17.117'
+__version__ = '1.17.194'
 
 # -----------------------------------------------------------------------------
 
@@ -514,7 +514,7 @@ class Exchange(object):
     @staticmethod
     def truncate_to_string(num, precision=0):
         if precision > 0:
-            parts = ('%f' % Decimal(num)).split('.')
+            parts = ('{0:.%df}' % precision).format(Decimal(num)).split('.')
             decimal_digits = parts[1][:precision].rstrip('0')
             decimal_digits = decimal_digits if len(decimal_digits) else '0'
             return parts[0] + '.' + decimal_digits
@@ -852,6 +852,12 @@ class Exchange(object):
         return json.dumps(data, separators=(',', ':'))
 
     @staticmethod
+    def is_json_encoded_object(input):
+        return (isinstance(input, basestring) and
+                (len(input) >= 2) and
+                ((input[0] == '{') or (input[0] == '[')))
+
+    @staticmethod
     def encode(string):
         return string.encode()
 
@@ -1010,10 +1016,18 @@ class Exchange(object):
         return self.fees
 
     def fetch_markets(self):
+        # markets are returned as a list
+        # currencies are returned as a dict
+        # this is for historical reasons
+        # and may be changed for consistency later
         return self.to_array(self.markets)
 
-    def fetch_currencies(self):
-        return self.to_array(self.currencies)
+    def fetch_currencies(self, params={}):
+        # markets are returned as a list
+        # currencies are returned as a dict
+        # this is for historical reasons
+        # and may be changed for consistency later
+        return self.currencies
 
     def fetch_fees(self):
         trading = {}

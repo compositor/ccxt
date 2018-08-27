@@ -284,6 +284,8 @@ class gdax (Exchange):
         # GDAX returns inverted side to fetchMyTrades vs fetchTrades
         if orderId is not None:
             side = 'buy' if (trade['side'] == 'buy') else 'sell'
+        price = self.safe_float(trade, 'price')
+        amount = self.safe_float(trade, 'size')
         return {
             'id': id,
             'order': orderId,
@@ -293,18 +295,21 @@ class gdax (Exchange):
             'symbol': symbol,
             'type': type,
             'side': side,
-            'price': self.safe_float(trade, 'price'),
-            'amount': self.safe_float(trade, 'size'),
+            'price': price,
+            'amount': amount,
             'fee': fee,
+            'cost': price * amount,
         }
 
     def fetch_my_trades(self, symbol=None, since=None, limit=None, params={}):
+        # as of 2018-08-23
+        if symbol is None:
+            raise ExchangeError(self.id + ' fetchMyTrades requires a symbol argument')
         self.load_markets()
-        market = None
-        request = {}
-        if symbol is not None:
-            market = self.market(symbol)
-            request['product_id'] = market['id']
+        market = self.market(symbol)
+        request = {
+            'product_id': market['id'],
+        }
         if limit is not None:
             request['limit'] = limit
         response = self.privateGetFills(self.extend(request, params))

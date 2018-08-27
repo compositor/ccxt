@@ -240,7 +240,7 @@ class bigone (Exchange):
             result[symbol] = ticker
         return result
 
-    async def fetch_order_book(self, symbol, params={}):
+    async def fetch_order_book(self, symbol, limit=None, params={}):
         await self.load_markets()
         response = await self.publicGetMarketsSymbolDepth(self.extend({
             'symbol': self.market_id(symbol),
@@ -558,12 +558,12 @@ class bigone (Exchange):
         return self.filter_by_symbol_since_limit(result, symbol, since, limit)
 
     async def fetch_open_orders(self, symbol=None, since=None, limit=None, params={}):
-        return self.fetch_orders(symbol, since, limit, self.extend({
+        return await self.fetch_orders(symbol, since, limit, self.extend({
             'state': 'PENDING',
         }, params))
 
     async def fetch_closed_orders(self, symbol=None, since=None, limit=None, params={}):
-        return self.fetch_orders(symbol, since, limit, self.extend({
+        return await self.fetch_orders(symbol, since, limit, self.extend({
             'state': 'FILLED',
         }, params))
 
