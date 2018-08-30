@@ -45,7 +45,7 @@ const Exchange  = require ('./js/base/Exchange')
 //-----------------------------------------------------------------------------
 // this is updated by vss.js when building
 
-const version = '1.17.194'
+const version = '1.17.207'
 
 Exchange.ccxtVersion = version
 
@@ -2108,8 +2108,10 @@ module.exports = class Exchange {
                 let details = 'not accessible from this location at the moment'
                 if (maintenance)
                     details = 'offline, on maintenance or unreachable from this location at the moment'
-                if (ddosProtection)
+                // http error codes proxied by cloudflare are not really DDoSProtection errors (mostly)
+                if ((response.status < 500) && (ddosProtection)) {
                     ExceptionClass = DDoSProtection
+                }
                 throw new ExceptionClass ([ this.id, method, url, response.status, title, details ].join (' '))
             }
 
@@ -4003,7 +4005,7 @@ module.exports =
 //  ---------------------------------------------------------------------------
 
 const Exchange = require ('./base/Exchange');
-const { ExchangeError, AuthenticationError } = require ('./base/errors');
+const { ExchangeError, AuthenticationError, InsufficientFunds } = require ('./base/errors');
 
 //  ---------------------------------------------------------------------------
 
@@ -4067,8 +4069,8 @@ module.exports = class bcex extends Exchange {
                 'trading': {
                     'tierBased': false,
                     'percentage': true,
-                    'bid': 0.0,
-                    'ask': 0.02 / 100,
+                    'maker': 0.0,
+                    'taker': 0.2 / 100,
                 },
                 'funding': {
                     'tierBased': false,
@@ -4079,10 +4081,11 @@ module.exports = class bcex extends Exchange {
                     },
                     'deposit': {},
                 },
-                'exceptions': {
-                    '该币不存在,非法操作': ExchangeError, // { code: 1, msg: "该币不存在,非法操作" } - returned when a required symbol parameter is missing in the request (also, maybe on other types of errors as well)
-                    '公钥不合法': AuthenticationError, // { code: 1, msg: '公钥不合法' } - wrong public key
-                },
+            },
+            'exceptions': {
+                '该币不存在,非法操作': ExchangeError, // { code: 1, msg: "该币不存在,非法操作" } - returned when a required symbol parameter is missing in the request (also, maybe on other types of errors as well)
+                '公钥不合法': AuthenticationError, // { code: 1, msg: '公钥不合法' } - wrong public key
+                '您的可用余额不足': InsufficientFunds, // { code: 1, msg: '您的可用余额不足' } - your available balance is insufficient
             },
         });
     }
@@ -4304,7 +4307,7 @@ module.exports = class bcex extends Exchange {
         let response = await this.privatePostApiOrderOrderInfo (this.extend (request, params));
         let order = response['data'];
         let timestamp = order['created'] * 1000;
-        let status = this.parseStatus (order['status']);
+        let status = this.parseOrderStatus (order['status']);
         let result = {
             'info': order,
             'id': id,
@@ -4408,13 +4411,13 @@ module.exports = class bcex extends Exchange {
         await this.loadMarkets ();
         let request = {};
         if (typeof symbol !== 'undefined') {
-            request['symbol'] = symbol;
+            request['symbol'] = this.marketId (symbol);
         }
         if (typeof id !== 'undefined') {
             request['order_id'] = id;
         }
-        let results = await this.privatePostApiOrderCancel (this.extend (request, params));
-        return results;
+        let response = await this.privatePostApiOrderCancel (this.extend (request, params));
+        return response;
     }
 
     sign (path, api = 'public', method = 'GET', params = {}, headers = undefined, body = undefined) {
@@ -8533,7 +8536,8 @@ module.exports = class bitfinex extends Exchange {
     async fetchBalance (params = {}) {
         await this.loadMarkets ();
         let balanceType = this.safeString (params, 'type', 'exchange');
-        let balances = await this.privatePostBalances ();
+        let query = this.omit (params, 'type');
+        let balances = await this.privatePostBalances (query);
         let result = { 'info': balances };
         for (let i = 0; i < balances.length; i++) {
             let balance = balances[i];
@@ -9572,26 +9576,31 @@ module.exports = class bitflyer extends Exchange {
                 spot = false;
             }
             let currencies = id.split ('_');
+            let baseId = undefined;
+            let quoteId = undefined;
             let base = undefined;
             let quote = undefined;
-            let symbol = id;
             let numCurrencies = currencies.length;
             if (numCurrencies === 1) {
-                base = symbol.slice (0, 3);
-                quote = symbol.slice (3, 6);
+                baseId = id.slice (0, 3);
+                quoteId = id.slice (3, 6);
             } else if (numCurrencies === 2) {
-                base = currencies[0];
-                quote = currencies[1];
-                symbol = base + '/' + quote;
+                baseId = currencies[0];
+                quoteId = currencies[1];
             } else {
-                base = currencies[1];
-                quote = currencies[2];
+                baseId = currencies[1];
+                quoteId = currencies[2];
             }
+            base = this.commonCurrencyCode (baseId);
+            quote = this.commonCurrencyCode (quoteId);
+            let symbol = (numCurrencies === 2) ? (base + '/' + quote) : id;
             result.push ({
                 'id': id,
                 'symbol': symbol,
                 'base': base,
                 'quote': quote,
+                'baseId': baseId,
+                'quoteId': quoteId,
                 'type': type,
                 'spot': spot,
                 'future': future,
@@ -20119,6 +20128,7 @@ module.exports = class cobinhood extends Exchange {
                 'fetchWithdrawals': true,
                 'withdraw': false,
                 'fetchMyTrades': true,
+                'editOrder': true,
             },
             'requiredCredentials': {
                 'apiKey': true,
@@ -20210,6 +20220,9 @@ module.exports = class cobinhood extends Exchange {
                         'wallet/deposit_addresses',
                         'wallet/withdrawal_addresses',
                         'wallet/withdrawals',
+                    ],
+                    'put': [
+                        'trading/orders/{order_id}',
                     ],
                     'delete': [
                         'trading/orders/{order_id}',
@@ -20603,6 +20616,17 @@ module.exports = class cobinhood extends Exchange {
         let id = order['id'];
         this.orders[id] = order;
         return order;
+    }
+
+    async editOrder (id, symbol, type, side, amount, price, params = {}) {
+        let response = await this.privatePutTradingOrdersOrderId (this.extend ({
+            'order_id': id,
+            'price': this.priceToPrecision (symbol, price),
+            'size': this.amountToString (symbol, amount),
+        }, params));
+        return this.parseOrder (this.extend (response, {
+            'id': id,
+        }));
     }
 
     async cancelOrder (id, symbol = undefined, params = {}) {
@@ -26556,26 +26580,23 @@ module.exports = class cointiger extends huobipro {
             amount = this.safeFloat2 (trade, 'amount', 'volume');
         }
         let fee = undefined;
-        if (typeof side !== 'undefined') {
-            let feeCostField = side + '_fee';
-            let feeCost = this.safeFloat (trade, feeCostField);
-            if (typeof feeCost !== 'undefined') {
-                let feeCurrency = undefined;
-                if (typeof market !== 'undefined') {
-                    feeCurrency = market['base'];
-                }
-                fee = {
-                    'cost': feeCost,
-                    'currency': feeCurrency,
-                };
+        let feeCost = this.safeFloat (trade, 'fee');
+        if (typeof feeCost !== 'undefined') {
+            let feeCurrency = undefined;
+            if (typeof market !== 'undefined') {
+                feeCurrency = market['base'];
             }
+            fee = {
+                'cost': feeCost,
+                'currency': feeCurrency,
+            };
         }
         if (typeof amount !== 'undefined')
             if (typeof price !== 'undefined')
                 if (typeof cost === 'undefined')
                     cost = amount * price;
         let timestamp = this.safeInteger2 (trade, 'created_at', 'ts');
-        timestamp = this.safeInteger (trade, 'created', timestamp);
+        timestamp = this.safeInteger2 (trade, 'created', 'mtime', timestamp);
         let symbol = undefined;
         if (typeof market !== 'undefined')
             symbol = market['symbol'];
@@ -26609,7 +26630,7 @@ module.exports = class cointiger extends huobipro {
 
     async fetchMyTrades (symbol = undefined, since = undefined, limit = undefined, params = {}) {
         if (typeof symbol === 'undefined')
-            throw new ExchangeError (this.id + ' fetchOrders requires a symbol argument');
+            throw new ExchangeError (this.id + ' fetchMyTrades requires a symbol argument');
         await this.loadMarkets ();
         let market = this.market (symbol);
         if (typeof limit === 'undefined')
@@ -26722,17 +26743,17 @@ module.exports = class cointiger extends huobipro {
             let order = this.extend (orders[i], {
                 'status': status,
             });
-            result.push (this.parseOrder (order, market, since, limit));
+            result.push (this.parseOrder (order, market));
         }
         return result;
     }
 
     async fetchOpenOrders (symbol = undefined, since = undefined, limit = undefined, params = {}) {
-        return this.fetchOrdersByStatus ('open', symbol, since, limit, params);
+        return await this.fetchOrdersByStatus ('open', symbol, since, limit, params);
     }
 
     async fetchClosedOrders (symbol = undefined, since = undefined, limit = undefined, params = {}) {
-        return this.fetchOrdersByStatus ('closed', symbol, since, limit, params);
+        return await this.fetchOrdersByStatus ('closed', symbol, since, limit, params);
     }
 
     async fetchOrder (id, symbol = undefined, params = {}) {
@@ -30051,7 +30072,7 @@ module.exports = class exx extends Exchange {
     async createOrder (symbol, type, side, amount, price = undefined, params = {}) {
         await this.loadMarkets ();
         let market = this.market (symbol);
-        let response = await this.privateGetOrder (this.extend ({
+        let response = await this.privateGetGetOrder (this.extend ({
             'currency': market['id'],
             'type': side,
             'price': price,
@@ -30093,7 +30114,7 @@ module.exports = class exx extends Exchange {
     async fetchOpenOrders (symbol = undefined, since = undefined, limit = undefined, params = {}) {
         await this.loadMarkets ();
         let market = this.market (symbol);
-        let orders = await this.privateGetOpenOrders (this.extend ({
+        let orders = await this.privateGetGetOpenOrders (this.extend ({
             'currency': market['id'],
         }, params));
         return this.parseOrders (orders, market, since, limit);
@@ -33344,11 +33365,11 @@ module.exports = class gdax extends Exchange {
     }
 
     parseTransactionStatus (transaction) {
-        if (transaction['canceled_at']) {
+        if ('canceled_at' in transaction && transaction['canceled_at']) {
             return 'canceled';
-        } else if (transaction['completed_at']) {
+        } else if ('completed_at' in transaction && transaction['completed_at']) {
             return 'ok';
-        } else if (transaction['procesed_at']) {
+        } else if ('procesed_at' in transaction && transaction['procesed_at']) {
             return 'pending';
         } else {
             return 'failed';
@@ -35682,7 +35703,8 @@ module.exports = class hitbtc2 extends hitbtc {
         await this.loadMarkets ();
         let type = this.safeString (params, 'type', 'trading');
         let method = 'privateGet' + this.capitalize (type) + 'Balance';
-        let balances = await this[method] ();
+        let query = this.omit (params, 'type');
+        let balances = await this[method] (query);
         let result = { 'info': balances };
         for (let b = 0; b < balances.length; b++) {
             let balance = balances[b];
